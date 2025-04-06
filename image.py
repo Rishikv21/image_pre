@@ -24,13 +24,9 @@ def sharpen_image(image):
                        [0, -1, 0]])
     return cv2.filter2D(image, -1, kernel)
 
-# Emboss
-def emboss_image(image):
-    kernel = np.array([[ -2, -1, 0],
-                       [ -1,  1, 1],
-                       [  0,  1, 2]])
-    embossed = cv2.filter2D(image, -1, kernel) + 128  # Adding 128 to center intensity
-    return np.clip(embossed, 0, 255).astype(np.uint8)
+# Negative transformation
+def negative_image(image):
+    return 255 - image
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
@@ -38,7 +34,7 @@ if uploaded_file:
     st.image(image, caption="Original Image", use_column_width=True)
 
     option = st.selectbox("Choose preprocessing operation", 
-                          ["Smoothening", "Shearing", "Sharpening", "Emboss"])
+                          ["Smoothening", "Shearing", "Sharpening", "Negative"])
 
     if option == "Smoothening":
         kernel_size = st.slider("Kernel Size (odd numbers only)", 3, 21, 5, step=2)
@@ -51,7 +47,7 @@ if uploaded_file:
     elif option == "Sharpening":
         result = sharpen_image(image)
 
-    elif option == "Emboss":
-        result = emboss_image(image)
+    elif option == "Negative":
+        result = negative_image(image)
 
     st.image(result, caption=f"{option} Applied", use_column_width=True)
