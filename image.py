@@ -7,21 +7,6 @@ st.title("🖼️ Image Preprocessing App")
 
 uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
-# Contrast Enhancement: Histogram Equalization
-def histogram_equalization(image):
-    image_yuv = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
-    image_yuv[:, :, 0] = cv2.equalizeHist(image_yuv[:, :, 0])
-    return cv2.cvtColor(image_yuv, cv2.COLOR_YUV2RGB)
-
-# Contrast Enhancement: CLAHE
-def apply_clahe(image):
-    image_lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-    l, a, b = cv2.split(image_lab)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    cl = clahe.apply(l)
-    merged = cv2.merge((cl, a, b))
-    return cv2.cvtColor(merged, cv2.COLOR_LAB2RGB)
-
 # Smoothening
 def smoothen_image(image, kernel_size):
     return cv2.GaussianBlur(image, (kernel_size, kernel_size), 0)
@@ -39,13 +24,21 @@ def sharpen_image(image):
                        [0, -1, 0]])
     return cv2.filter2D(image, -1, kernel)
 
+# Emboss
+def emboss_image(image):
+    kernel = np.array([[ -2, -1, 0],
+                       [ -1,  1, 1],
+                       [  0,  1, 2]])
+    embossed = cv2.filter2D(image, -1, kernel) + 128  # Adding 128 to center intensity
+    return np.clip(embossed, 0, 255).astype(np.uint8)
+
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     image = np.array(image)
     st.image(image, caption="Original Image", use_column_width=True)
 
     option = st.selectbox("Choose preprocessing operation", 
-                          ["Smoothening", "Shearing", "Sharpening", "Contrast: Histogram Equalization", "Contrast: CLAHE"])
+                          ["Smoothening", "Shearing", "Sharpening", "Emboss"])
 
     if option == "Smoothening":
         kernel_size = st.slider("Kernel Size (odd numbers only)", 3, 21, 5, step=2)
@@ -58,10 +51,7 @@ if uploaded_file:
     elif option == "Sharpening":
         result = sharpen_image(image)
 
-    elif option == "Contrast: Histogram Equalization":
-        result = histogram_equalization(image)
-
-    elif option == "Contrast: CLAHE":
-        result = apply_clahe(image)
+    elif option == "Emboss":
+        result = emboss_image(image)
 
     st.image(result, caption=f"{option} Applied", use_column_width=True)
