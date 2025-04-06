@@ -7,12 +7,20 @@ st.title("🖼️ Image Preprocessing App")
 
 uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
-# Scale
-def scale_image(image, scale_percent):
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # Ensure correct format
-    width = int(image.shape[1] * scale_percent / 100)
-    height = int(image.shape[0] * scale_percent / 100)
-    return cv2.resize(image, (width, height), interpolation=cv2.INTER_LINEAR)
+# Contrast Enhancement: Histogram Equalization
+def histogram_equalization(image):
+    image_yuv = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+    image_yuv[:, :, 0] = cv2.equalizeHist(image_yuv[:, :, 0])
+    return cv2.cvtColor(image_yuv, cv2.COLOR_YUV2RGB)
+
+# Contrast Enhancement: CLAHE
+def apply_clahe(image):
+    image_lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+    l, a, b = cv2.split(image_lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    cl = clahe.apply(l)
+    merged = cv2.merge((cl, a, b))
+    return cv2.cvtColor(merged, cv2.COLOR_LAB2RGB)
 
 # Smoothening
 def smoothen_image(image, kernel_size):
@@ -27,7 +35,7 @@ def shear_image(image, shear_factor):
 # Sharpening
 def sharpen_image(image):
     kernel = np.array([[0, -1, 0],
-                       [-1, 5,-1],
+                       [-1, 5, -1],
                        [0, -1, 0]])
     return cv2.filter2D(image, -1, kernel)
 
@@ -37,13 +45,9 @@ if uploaded_file:
     st.image(image, caption="Original Image", use_column_width=True)
 
     option = st.selectbox("Choose preprocessing operation", 
-                          ["Scale", "Smoothening", "Shearing", "Sharpening"])
+                          ["Smoothening", "Shearing", "Sharpening", "Contrast: Histogram Equalization", "Contrast: CLAHE"])
 
-    if option == "Scale":
-        scale_percent = st.slider("Scale (%)", 10, 200, 100)
-        result = scale_image(image, scale_percent)
-
-    elif option == "Smoothening":
+    if option == "Smoothening":
         kernel_size = st.slider("Kernel Size (odd numbers only)", 3, 21, 5, step=2)
         result = smoothen_image(image, kernel_size)
 
@@ -53,5 +57,11 @@ if uploaded_file:
 
     elif option == "Sharpening":
         result = sharpen_image(image)
+
+    elif option == "Contrast: Histogram Equalization":
+        result = histogram_equalization(image)
+
+    elif option == "Contrast: CLAHE":
+        result = apply_clahe(image)
 
     st.image(result, caption=f"{option} Applied", use_column_width=True)
