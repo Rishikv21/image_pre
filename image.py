@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-st.title("🖼️ Image Preprocessing App")
+st.title("Image Processor")
 
 uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
